@@ -7,9 +7,14 @@ ApiClient = class ApiClient
     token: ''
     cgi: 'https://mp.weixin.qq.com/cgi-bin/'
     agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36'
+    username: undefined
+    password: undefined
 
     login: (username,password,imgcode,cb) ->
-        @_request @cgi+'login?lang=zh_CN',
+        @username = username
+        @password = password
+
+        urllib.request @cgi+'login?lang=zh_CN',
             dataType: 'json'
             headers:
                 'Referer': @cgi + 'loginpage?t=wxm2-login&lang=zh_CN'
@@ -48,7 +53,7 @@ ApiClient = class ApiClient
     fetchVerifyCode: (username,cb)->
         path = process.cwd() + "/tmp/#{username}.jpeg"
         filepipe = fs.createWriteStream path
-        @_request @cgi+'verifycode?username=#{username}&r=#{new Date}',
+        urllib.request @cgi+'verifycode?username=#{username}&r=#{new Date}',
             headers:
                 'Referer': @cgi + 'loginpage?t=wxm2-login&lang=zh_CN'
                 'User-Agent': @agent
@@ -59,7 +64,7 @@ ApiClient = class ApiClient
 
 
     scanuser : (pageidx,cb)->
-        @_request @cgi+"contactmanage?t=user/index&pagesize=10&pageidx=#{pageidx||0}&type=0&groupid=0&token=#{@token}&lang=zh_CN"
+        @_request @cgi+"contactmanage?t=user/index&pagesize=10&pageidx=#{pageidx||0}&type=0&groupid=0&lang=zh_CN"
             , headers:
                 'Cookie': @_sendCookies()
                 'User-Agent': @agent
@@ -72,7 +77,7 @@ ApiClient = class ApiClient
                 cb && cb err, cgiData
 
     scanmessage : (count,cb)->
-        @_request @cgi+"message?t=message/list&count=#{count||100}&day=7&token=#{@token}&lang=zh_CN"
+        @_request @cgi+"message?t=message/list&count=#{count||100}&day=7&lang=zh_CN"
             , headers:
                 'Cookie': @_sendCookies()
                 'User-Agent': @agent
@@ -101,7 +106,7 @@ ApiClient = class ApiClient
                 console.log err, if err then undefined else body
 
     headimg: (fakeid,localpath,cb)->
-       @_request @cgi+"getheadimg?fakeid=#{fakeid}&token=#{@token}&lang=zh_CN",
+       @_request @cgi+"getheadimg?fakeid=#{fakeid}&lang=zh_CN",
             writeStream: fs.createWriteStream localpath
             headers:
                 'User-Agent': @agent
@@ -115,7 +120,7 @@ ApiClient = class ApiClient
             headers:
                 'User-Agent': @agent
                 'Cookie': @_sendCookies()
-                'Referer': @cgi + 'singlemsgpage?token=' + @token + '&fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN',
+                'Referer': @cgi + 'singlemsgpage?' + 'fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN',
             data:
                 type:1
                 content:txt
@@ -145,11 +150,27 @@ ApiClient = class ApiClient
         cookies || undefined
 
     _request: (url,opts,cb) ->
-        console.log url,opts
 
-        
-        
-        urllib.request url,opts,(err,body,res)->
+        makesession = =>
+            opts.headers = {} if not opts.headers
+            opts.headers.Cookie = @_sendCookies()
+            url + "&token=" + @token
+
+        urllib.request makesession(),opts,(err,body,res)=>
+
+            # 会话超时，自动重新登陆
+            if( @username && body && body.toString().match(/登录超时/) )
+                console.log 'wechat session time out, auto relogin ...'
+                @login @username, @password, '', (err,token)->
+                    if token
+                        console.log "relogined to wechat, new token is : #{token}"
+                        urllib.request makesession(),opts,cb
+                    else
+                        console.log 'relogined fail.'
+                        cb && cb(err)
+                return
+
+            # callback
             cb && cb(err,body,res)
 
 module.exports = ApiClient

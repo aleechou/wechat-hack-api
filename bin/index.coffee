@@ -15,7 +15,7 @@ cmd =
             process.stdin.write 'password: '
             (data) ->
                 password = data.trim() || 'imagchina'
-                console.log "logining as #{username}"
+                console.log "logining as #{username} ..."
                 client.login username, password, '', (err,token)->
                     # 输入验证码
                     if err && err.message=='verifycode'
@@ -62,6 +62,11 @@ cmd =
             process.stdin.write 'text:'
             (data)->
                 client.send fakeid, data
+
+    settoken: ->
+        process.stdin.write 'new token:'
+        (data) ->
+            client.token = data.trim()
 
     help : ->
         console.log 'what are doing?'
