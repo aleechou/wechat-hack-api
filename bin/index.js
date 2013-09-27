@@ -14,13 +14,13 @@
       return function(data) {
         var username;
 
-        username = data.trim() || 'alee.chou@imagchina.com';
+        username = data.trim() || 'aaron.geng@imagchina.com';
         process.stdin.write('password: ');
         return function(data) {
           var password;
 
-          password = data.trim() || '111111';
-          console.log("logining as " + username);
+          password = data.trim() || 'imagchina';
+          console.log("logining as " + username + " ...");
           return client.login(username, password, '', function(err, token) {
             if (err && err.message === 'verifycode') {
               console(log('需要输入验证码，验证码已保存至:' + err.localpath));
@@ -40,11 +40,72 @@
         };
       };
     },
+    scanuser: function() {
+      return client.scanuser(0, function(err, cgiData) {
+        return console.log(cgiData);
+      });
+    },
+    scanmessage: function() {
+      return client.scanmessage(100, function(err, cgiData) {
+        return console.log(cgiData);
+      });
+    },
+    userinfo: function() {
+      process.stdin.write('fakeid:');
+      return function(data) {
+        return client.userinfo(data.trim() || '1867891761', function(err, info) {});
+      };
+    },
+    headimg: function() {
+      process.stdin.write('fakeid:');
+      return function(data) {
+        var fakeid;
+
+        fakeid = data.trim() || '1867891761';
+        process.stdin.write('local path:');
+        return function(data) {
+          var localpath;
+
+          localpath = data.trim();
+          return client.headimg(fakeid, localpath, function(err) {
+            if (err) {
+              return console.log(err);
+            } else {
+              return console.log('download user head img to ', localpath);
+            }
+          });
+        };
+      };
+    },
+    send: function() {
+      process.stdin.write('fakeid:');
+      return function(data) {
+        var fakeid;
+
+        fakeid = data.trim() || '1867891761';
+        process.stdin.write('text:');
+        return function(data) {
+          return client.send(fakeid, data);
+        };
+      };
+    },
+    settoken: function() {
+      process.stdin.write('new token:');
+      return function(data) {
+        return client.token = data.trim();
+      };
+    },
     help: function() {
+      var cmdname, _i, _len, _ref, _results;
+
       console.log('what are doing?');
-      console.log('    login');
-      console.log('    scan-user');
-      return console.log('    scan-message');
+      _ref = Object.keys(cmd);
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        cmdname = _ref[_i];
+        _results.push(console.log("    " + cmdname));
+      }
+      return _results;
     }
   };
 

@@ -19,10 +19,16 @@
 
     ApiClient.prototype.agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36';
 
+    ApiClient.prototype.username = void 0;
+
+    ApiClient.prototype.password = void 0;
+
     ApiClient.prototype.login = function(username, password, imgcode, cb) {
       var _this = this;
 
-      return this._request(this.cgi + 'login?lang=zh_CN', {
+      this.username = username;
+      this.password = password;
+      return urllib.request(this.cgi + 'login?lang=zh_CN', {
         dataType: 'json',
         headers: {
           'Referer': this.cgi + 'loginpage?t=wxm2-login&lang=zh_CN',
@@ -70,7 +76,7 @@
 
       path = process.cwd() + ("/tmp/" + username + ".jpeg");
       filepipe = fs.createWriteStream(path);
-      return this._request(this.cgi + 'verifycode?username=#{username}&r=#{new Date}', {
+      return urllib.request(this.cgi + 'verifycode?username=#{username}&r=#{new Date}', {
         headers: {
           'Referer': this.cgi + 'loginpage?t=wxm2-login&lang=zh_CN',
           'User-Agent': this.agent
@@ -83,7 +89,7 @@
     };
 
     ApiClient.prototype.scanuser = function(pageidx, cb) {
-      return this._request(this.cgi + ("contactmanage?t=user/index&pagesize=10&pageidx=" + (pageidx || 0) + "&type=0&groupid=0&token=" + this.token + "&lang=zh_CN"), {
+      return this._request(this.cgi + ("contactmanage?t=user/index&pagesize=10&pageidx=" + (pageidx || 0) + "&type=0&groupid=0&lang=zh_CN"), {
         headers: {
           'Cookie': this._sendCookies(),
           'User-Agent': this.agent
@@ -103,7 +109,7 @@
     };
 
     ApiClient.prototype.scanmessage = function(count, cb) {
-      return this._request(this.cgi + ("message?t=message/list&count=" + (count || 100) + "&day=7&token=" + this.token + "&lang=zh_CN"), {
+      return this._request(this.cgi + ("message?t=message/list&count=" + (count || 100) + "&day=7&lang=zh_CN"), {
         headers: {
           'Cookie': this._sendCookies(),
           'User-Agent': this.agent
@@ -142,7 +148,7 @@
     };
 
     ApiClient.prototype.headimg = function(fakeid, localpath, cb) {
-      return this._request(this.cgi + ("getheadimg?fakeid=" + fakeid + "&token=" + this.token + "&lang=zh_CN"), {
+      return this._request(this.cgi + ("getheadimg?fakeid=" + fakeid + "&lang=zh_CN"), {
         writeStream: fs.createWriteStream(localpath),
         headers: {
           'User-Agent': this.agent,
@@ -161,7 +167,7 @@
         headers: {
           'User-Agent': this.agent,
           'Cookie': this._sendCookies(),
-          'Referer': this.cgi + 'singlemsgpage?token=' + this.token + '&fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN'
+          'Referer': this.cgi + 'singlemsgpage?' + 'fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN'
         },
         data: {
           type: 1,
@@ -211,8 +217,30 @@
     };
 
     ApiClient.prototype._request = function(url, opts, cb) {
-      console.log(url, opts);
-      return urllib.request(url, opts, function(err, body, res) {
+      var makesession,
+        _this = this;
+
+      makesession = function() {
+        if (!opts.headers) {
+          opts.headers = {};
+        }
+        opts.headers.Cookie = _this._sendCookies();
+        return url + "&token=" + _this.token;
+      };
+      return urllib.request(makesession(), opts, function(err, body, res) {
+        if (_this.username && body && body.toString().match(/登录超时/)) {
+          console.log('wechat session time out, auto relogin ...');
+          _this.login(_this.username, _this.password, '', function(err, token) {
+            if (token) {
+              console.log("relogined to wechat, new token is : " + token);
+              return urllib.request(makesession(), opts, cb);
+            } else {
+              console.log('relogined fail.');
+              return cb && cb(err);
+            }
+          });
+          return;
+        }
         return cb && cb(err, body, res);
       });
     };
