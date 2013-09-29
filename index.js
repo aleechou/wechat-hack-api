@@ -92,12 +92,7 @@
     };
 
     ApiClient.prototype.scanuser = function(pageidx, cb) {
-      return this._request(this.cgi + ("contactmanage?t=user/index&pagesize=10&pageidx=" + (pageidx || 0) + "&type=0&groupid=0&lang=zh_CN"), {
-        headers: {
-          'Cookie': this._sendCookies(),
-          'User-Agent': this.agent
-        }
-      }, function(err, body, res) {
+      return this._request(this.cgi + ("contactmanage?t=user/index&pagesize=10&pageidx=" + (pageidx || 0) + "&type=0&groupid=0&lang=zh_CN"), {}, function(err, body, res) {
         var cgiData, rs;
 
         if (body) {
@@ -112,12 +107,7 @@
     };
 
     ApiClient.prototype.scanmessage = function(count, cb) {
-      return this._request(this.cgi + ("message?t=message/list&count=" + (count || 100) + "&day=7&lang=zh_CN"), {
-        headers: {
-          'Cookie': this._sendCookies(),
-          'User-Agent': this.agent
-        }
-      }, function(err, body, res) {
+      return this._request(this.cgi + ("message?t=message/list&count=" + (count || 100) + "&day=7&lang=zh_CN"), {}, function(err, body, res) {
         var cgiData, rs;
 
         if (body) {
@@ -132,12 +122,7 @@
     };
 
     ApiClient.prototype.usermessage = function(fakeid, cb) {
-      return this._request(this.cgi + ("singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=" + fakeid + "&token=" + this.token + "&lang=zh_CN"), {
-        headers: {
-          'Cookie': this._sendCookies(),
-          'User-Agent': this.agent
-        }
-      }, function(err, body, res) {
+      return this._request(this.cgi + ("singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=" + fakeid + "&lang=zh_CN"), {}, function(err, body, res) {
         var cgiData, rs;
 
         rs = body.toString().match(/<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/);
@@ -162,7 +147,7 @@
           fakeid: fakeid
         }
       };
-      return this._request('https://mp.weixin.qq.com/cgi-bin/getcontactinfo', opts, function(err, body, res) {
+      return this._request("" + cgi + "getcontactinfo", opts, function(err, body, res) {
         return console.log(err, err ? void 0 : body);
       });
     };
@@ -175,6 +160,21 @@
           'Cookie': this._sendCookies()
         }
       }, function(err, body, res) {
+        return cb && cb(err);
+      });
+    };
+
+    ApiClient.prototype.voice = function(msgid, localpath, cb) {
+      console.log(msgid);
+      return this._request(this.cgi + ("getvoicedata?msgid=" + msgid + "&fileid=&lang=zh_CN"), {
+        writeStream: fs.createWriteStream(localpath),
+        headers: {
+          'User-Agent': this.agent,
+          'Cookie': this._sendCookies(),
+          'Referer': "" + this.cgi + "getmessage?t=wxm-message&lang=zh_CN&count=50&token=" + this.token
+        }
+      }, function(err, body, res) {
+        console.log('voice finish');
         return cb && cb(err);
       });
     };
@@ -240,20 +240,23 @@
 
       opts.timeout = 30000;
       makesession = function() {
+        var _url;
+
         if (!opts.headers) {
           opts.headers = {};
         }
         opts.headers.Cookie = _this._sendCookies();
         opts.headers['User-Agent'] = _this.agent;
+        _url = url;
         if (opts.type === 'POST') {
           if (!opts.data) {
             opts.data = {};
           }
           opts.data.token = _this.token;
         } else {
-          url + "&token=" + _this.token;
+          _url += "&token=" + _this.token;
         }
-        return url;
+        return _url;
       };
       return urllib.request(makesession(), opts, function(err, body, res) {
         if (_this.username && body && body.toString().match(/登录超时/)) {

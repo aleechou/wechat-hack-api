@@ -62,6 +62,21 @@ cmd =
                     else
                         console.log 'download user head img to ', localpath
 
+    voice: ->
+        process.stdin.write 'msgid:'
+        (data) ->
+            msgid = data.trim() || '1657'
+            process.stdin.write 'local path:'
+            (data) ->
+                return if not path=data.trim()
+                console.log msgid,path
+                client.voice msgid, path, (err)->
+                    if err
+                        console.log err
+                    else
+                        console.log 'download user voice to ', path
+
+
     send: ->
         process.stdin.write 'fakeid:'
         (data)->

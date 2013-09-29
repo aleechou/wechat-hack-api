@@ -67,9 +67,7 @@ ApiClient = class ApiClient
 
     scanuser : (pageidx,cb)->
         @_request @cgi+"contactmanage?t=user/index&pagesize=10&pageidx=#{pageidx||0}&type=0&groupid=0&lang=zh_CN"
-            , headers:
-                'Cookie': @_sendCookies()
-                'User-Agent': @agent
+            , {}
             , (err,body,res)->
                 rs = /<script type=\"text\/javascript\">\s+cgiData=([\s\w\W]+?)seajs\.use\(\"user\/index\"\);/.exec body.toString() if body
 
@@ -80,9 +78,7 @@ ApiClient = class ApiClient
 
     scanmessage : (count,cb)->
         @_request @cgi+"message?t=message/list&count=#{count||100}&day=7&lang=zh_CN"
-            , headers:
-                'Cookie': @_sendCookies()
-                'User-Agent': @agent
+            , {}
             , (err,body,res)->
                 #console.log err,body.toString()
                 rs = /<script type=\"text\/javascript\">\s+wx.cgiData = ([\s\w\W]+?)seajs\.use\(\"message\/list\"\);/.exec body.toString() if body
@@ -94,10 +90,8 @@ ApiClient = class ApiClient
 
 
     usermessage : (fakeid,cb)->
-        @_request @cgi+"singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=#{fakeid}&token=#{@token}&lang=zh_CN"
-            , headers:
-                'Cookie': @_sendCookies()
-                'User-Agent': @agent
+        @_request @cgi+"singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=#{fakeid}&lang=zh_CN"
+            , {}
             , (err,body,res)->
 
                 rs = body.toString().match /<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/
@@ -116,16 +110,28 @@ ApiClient = class ApiClient
                 lang:"zh_CN"
                 t:"ajax-getcontactinfo"
                 fakeid:fakeid
-        @_request 'https://mp.weixin.qq.com/cgi-bin/getcontactinfo', opts, (err,body,res) ->
+        @_request "#{cgi}getcontactinfo", opts, (err,body,res) ->
                 console.log err, if err then undefined else body
 
     headimg: (fakeid,localpath,cb)->
        @_request @cgi+"getheadimg?fakeid=#{fakeid}&lang=zh_CN",
-            writeStream: fs.createWriteStream localpath
+            writeStream: fs.createWriteStream(localpath)
             headers:
                 'User-Agent': @agent
                 'Cookie': @_sendCookies()
             , (err,body,res)->
+                cb && cb err
+
+    voice: (msgid,localpath,cb)->
+        console.log msgid
+        @_request @cgi+"getvoicedata?msgid=#{msgid}&fileid=&lang=zh_CN",
+            writeStream: fs.createWriteStream(localpath)
+            headers:
+                'User-Agent': @agent
+                'Cookie': @_sendCookies()
+                'Referer': "#{@cgi}getmessage?t=wxm-message&lang=zh_CN&count=50&token=#{@token}"
+            , (err,body,res)->
+                console.log 'voice finish'
                 cb && cb err
 
     send: (fakeid,txt,cb) ->
@@ -169,12 +175,13 @@ ApiClient = class ApiClient
             opts.headers = {} if not opts.headers
             opts.headers.Cookie = @_sendCookies()
             opts.headers['User-Agent'] = @agent
+            _url = url
             if opts.type == 'POST'
                 opts.data = {} if not opts.data
                 opts.data.token = @token
             else
-                url + "&token=" + @token
-            url
+                _url+= "&token=" + @token
+            _url
 
         urllib.request makesession(),opts,(err,body,res)=>
             # 会话超时，自动重新登陆
