@@ -90,6 +90,20 @@ ApiClient = class ApiClient
 
                 cb && cb err, cgiData
 
+
+    usermessage : (fakeid,cb)->
+        @_request @cgi+"singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=#{fakeid}&token=#{@token}&lang=zh_CN"
+            , headers:
+                'Cookie': @_sendCookies()
+                'User-Agent': @agent
+            , (err,body,res)->
+
+                rs = body.toString().match /<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/
+                cgiData = undefined
+                eval 'cgiData='+rs[1] if rs
+
+                cb && cb err, cgiData
+
     userinfo: (fakeid,cb)->
         @_request @cgi+"getcontactinfo",
             type: 'POST'

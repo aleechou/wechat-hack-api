@@ -37,10 +37,16 @@ cmd =
         client.scanmessage 100, (err,cgiData) ->
             console.log cgiData
 
+    usermessage: ->
+        process.stdin.write 'fakeid: '
+        (data) ->
+            client.usermessage data.trim()||'1867891761', (err,cgiData) ->
+                console.log cgiData
+
     userinfo: ->
         process.stdin.write 'fakeid:'
         (data) ->
-            client.userinfo data.trim()||'1867891761', (err,info)->
+        client.userinfo data.trim()||'1867891761', (err,info)->
 
     headimg: ->
         process.stdin.write 'fakeid:'

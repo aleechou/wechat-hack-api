@@ -128,6 +128,24 @@
       });
     };
 
+    ApiClient.prototype.usermessage = function(fakeid, cb) {
+      return this._request(this.cgi + ("singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=" + fakeid + "&token=" + this.token + "&lang=zh_CN"), {
+        headers: {
+          'Cookie': this._sendCookies(),
+          'User-Agent': this.agent
+        }
+      }, function(err, body, res) {
+        var cgiData, rs;
+
+        rs = body.toString().match(/<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/);
+        cgiData = void 0;
+        if (rs) {
+          eval('cgiData=' + rs[1]);
+        }
+        return cb && cb(err, cgiData);
+      });
+    };
+
     ApiClient.prototype.userinfo = function(fakeid, cb) {
       return this._request(this.cgi + "getcontactinfo", {
         type: 'POST',
