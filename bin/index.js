@@ -50,11 +50,18 @@
         return console.log(cgiData);
       });
     },
+    usermessage: function() {
+      process.stdin.write('fakeid: ');
+      return function(data) {
+        return client.usermessage(data.trim() || '1867891761', function(err, cgiData) {
+          return console.log(cgiData);
+        });
+      };
+    },
     userinfo: function() {
       process.stdin.write('fakeid:');
-      return function(data) {
-        return client.userinfo(data.trim() || '1867891761', function(err, info) {});
-      };
+      (function(data) {});
+      return client.userinfo(data.trim() || '1867891761', function(err, info) {});
     },
     headimg: function() {
       process.stdin.write('fakeid:');
