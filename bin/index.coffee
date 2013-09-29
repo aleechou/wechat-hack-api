@@ -1,6 +1,7 @@
 #! /usr/bin/env coffee
-
+urllib = require 'urllib'
 HackApiClient = require '../index.coffee'
+https = require 'https'
 
 client = new HackApiClient
 # client.login 'alee.chou@imagchina.com', '11111'
@@ -46,7 +47,7 @@ cmd =
     userinfo: ->
         process.stdin.write 'fakeid:'
         (data) ->
-        client.userinfo data.trim()||'1867891761', (err,info)->
+            client.userinfo data.trim()||'1867891761', (err,info)->
 
     headimg: ->
         process.stdin.write 'fakeid:'
@@ -77,6 +78,20 @@ cmd =
     help : ->
         console.log 'what are doing?'
         console.log "    #{cmdname}" for cmdname in Object.keys(cmd)
+
+    t: ->
+
+        urllib.request 'https://mp.weixin.qq.com/cgi-bin/getcontactinfo' ,
+            headers:
+                Cookie: "cert=e0hwX3gNEEqV4xapDyT2pkcBgXbJ3QBi; remember_acct=aaron.geng@imagchina.com; slave_user=gh_4f18b82a5953; slave_sid=TGNUQnB4UE9TRFZNUXRPaEFTcmtYUl84MUVUT0hZX3A5VFl3bk1oZW9jWWJGTHJlQlN3dkd3REg3dXNcnNheWs1M0ZSalNkdlBtOXlObThDU0JobGVackdvYzZRbEU3cUZOZllFcXNzTUFZeFc1OGlGalpyUnhocndpNWprNFU="
+            type: 'POST'
+            data:
+                token:"121669633"
+                lang:"zh_CN"
+                t:"ajax-getcontactinfo"
+                fakeid: '486924695'
+            , (err,body,res)->
+                console.log body.toString()
 
 do process.stdin.resume
 process.stdin.on 'data', (data)->

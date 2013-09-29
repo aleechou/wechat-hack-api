@@ -1,6 +1,7 @@
 fs = require 'fs'
 crypto = require 'crypto'
 urllib = require 'urllib'
+http = require 'http'
 
 ApiClient = class ApiClient
     cookies: {}
@@ -25,6 +26,7 @@ ApiClient = class ApiClient
                 imagecode: imgcode||''
                 f: 'json'
             type: 'POST'
+            timeout: 30000
             , (err,body,res) =>
                 #console.log arguments
                 # 需要输入验证码
@@ -105,18 +107,16 @@ ApiClient = class ApiClient
                 cb && cb err, cgiData
 
     userinfo: (fakeid,cb)->
-        @_request @cgi+"getcontactinfo",
+
+        opts =
             type: 'POST'
             dataType: 'json'
-            headers:
-                'User-Agent': @agent
-                'Cookie': @_sendCookies()
             data:
                 token:@token
                 lang:"zh_CN"
                 t:"ajax-getcontactinfo"
                 fakeid:fakeid
-            , (err,body,res) ->
+        @_request 'https://mp.weixin.qq.com/cgi-bin/getcontactinfo', opts, (err,body,res) ->
                 console.log err, if err then undefined else body
 
     headimg: (fakeid,localpath,cb)->
@@ -132,8 +132,6 @@ ApiClient = class ApiClient
         opts =
             type: 'POST'
             headers:
-                'User-Agent': @agent
-                'Cookie': @_sendCookies()
                 'Referer': @cgi + 'singlemsgpage?' + 'fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN',
             data:
                 type:1
@@ -147,6 +145,7 @@ ApiClient = class ApiClient
         console.log opts
         @_request @cgi+"singlesend?t=ajax-response&lang=zh_CN", opts, (err,body)->
             console.log err, body.toString()
+
 
     _receiveCookies: (res) ->
         ret = {}
@@ -165,13 +164,19 @@ ApiClient = class ApiClient
 
     _request: (url,opts,cb) ->
 
+        opts.timeout = 30000
         makesession = =>
             opts.headers = {} if not opts.headers
             opts.headers.Cookie = @_sendCookies()
-            url + "&token=" + @token
+            opts.headers['User-Agent'] = @agent
+            if opts.type == 'POST'
+                opts.data = {} if not opts.data
+                opts.data.token = @token
+            else
+                url + "&token=" + @token
+            url
 
         urllib.request makesession(),opts,(err,body,res)=>
-
             # 会话超时，自动重新登陆
             if( @username && body && body.toString().match(/登录超时/) )
                 console.log 'wechat session time out, auto relogin ...'
