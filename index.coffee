@@ -110,7 +110,7 @@ ApiClient = class ApiClient
                 lang:"zh_CN"
                 t:"ajax-getcontactinfo"
                 fakeid:fakeid
-        @_request "#{cgi}getcontactinfo", opts, (err,body,res) ->
+        @_request "#{@cgi}getcontactinfo", opts, (err,body,res) ->
                 console.log err, if err then undefined else body
 
     headimg: (fakeid,localpath,cb)->
@@ -129,7 +129,7 @@ ApiClient = class ApiClient
             headers:
                 'User-Agent': @agent
                 'Cookie': @_sendCookies()
-                'Referer': "#{@cgi}getmessage?t=wxm-message&lang=zh_CN&count=50&token=#{@token}"
+                'Referer': "#{@cgi}getmessage?t=wxm-message&lang=zh_CN&count=50&token=#{@gtoken}"
             , (err,body,res)->
                 console.log 'voice finish'
                 cb && cb err
