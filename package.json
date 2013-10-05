@@ -16,5 +16,8 @@
     ""
   ],
   "author": "aleechou",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "urllib": "~0.5.2"
+  }
 }
