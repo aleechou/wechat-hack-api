@@ -181,3 +181,7 @@
   prompt();
 
 }).call(this);
+
+/*
+//@ sourceMappingURL=index.map
+*/
