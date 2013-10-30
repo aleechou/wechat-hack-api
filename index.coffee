@@ -112,6 +112,7 @@ ApiClient = class ApiClient
                 fakeid:fakeid
         @_request "#{@cgi}getcontactinfo", opts, (err,body,res) ->
                 console.log err, if err then undefined else body
+                cb && cb err,body
 
     headimg: (fakeid,localpath,cb)->
        @_request @cgi+"getheadimg?fakeid=#{fakeid}&lang=zh_CN",
