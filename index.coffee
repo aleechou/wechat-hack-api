@@ -69,7 +69,8 @@ ApiClient = class ApiClient
         @_request @cgi+"contactmanage?t=user/index&pagesize=10&pageidx=#{pageidx||0}&type=0&groupid=0&lang=zh_CN"
             , {}
             , (err,body,res)->
-                rs = /<script type=\"text\/javascript\">\s+cgiData=([\s\w\W]+?)seajs\.use\(\"user\/index\"\);/.exec body.toString() if body
+                #console.log err,body.toString()
+                rs = /<script type=\"text\/javascript\">\s+wx\.cgiData=([\s\w\W]+?)seajs\.use\(\"user\/index\"\);/.exec body.toString() if body
 
                 cgiData = undefined
                 eval 'cgiData='+rs[1] if rs
@@ -81,7 +82,7 @@ ApiClient = class ApiClient
             , {}
             , (err,body,res)->
                 #console.log err,body.toString()
-                rs = /<script type=\"text\/javascript\">\s+wx.cgiData = ([\s\w\W]+?)seajs\.use\(\"message\/list\"\);/.exec body.toString() if body
+                rs = /<script type=\"text\/javascript\">\s+wx\.cgiData = ([\s\w\W]+?)seajs\.use\(\"message\/list\"\);/.exec body.toString() if body
 
                 cgiData = undefined
                 eval 'cgiData='+rs[1] if rs
@@ -90,15 +91,15 @@ ApiClient = class ApiClient
 
 
     usermessage : (fakeid,cb)->
-        @_request @cgi+"singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=#{fakeid}&lang=zh_CN"
+        @_request @cgi+"singlesendpage?action=index&t=message/sen&tofakeid=#{fakeid}&lang=zh_CN"
             , {}
             , (err,body,res)->
 
-                rs = body.toString().match /<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/
+                rs = /<script type=\"text\/javascript\">\s+wx\.cgiData = ([\s\w\W]+?)wx\.cgiData\.tofakeid/.exec body.toString() if body
                 cgiData = undefined
                 eval 'cgiData='+rs[1] if rs
 
-                cb && cb err, cgiData
+                cb && cb err, cgiData.msg_items.msg_item
 
     userinfo: (fakeid,cb)->
 
@@ -110,7 +111,11 @@ ApiClient = class ApiClient
                 lang:"zh_CN"
                 t:"ajax-getcontactinfo"
                 fakeid:fakeid
+            headers:
+              Referer: "#{@cgi}contactmanage?t=user/index&pagesize=10&pageidx=0&type=0&groupid=0&lang=zh_CN&token=#{@gtoken}"
+
         @_request "#{@cgi}getcontactinfo", opts, (err,body,res) ->
+
                 console.log err, if err then undefined else body
                 cb && cb err,body
 
@@ -125,12 +130,12 @@ ApiClient = class ApiClient
 
     voice: (msgid,localpath,cb)->
         console.log msgid
-        @_request @cgi+"getvoicedata?msgid=#{msgid}&fileid=&lang=zh_CN",
+        @_request @cgi+"getvoicedata?msgid=#{msgid}&fileid=&lang=zh_CN&token=#{@gtoken}",
             writeStream: fs.createWriteStream(localpath)
             headers:
                 'User-Agent': @agent
                 'Cookie': @_sendCookies()
-                'Referer': "#{@cgi}getmessage?t=wxm-message&lang=zh_CN&count=50&token=#{@gtoken}"
+                'Referer': "#{@cgi}singlesendpage?t=wxm-message&lang=zh_CN&count=50&token=#{@gtoken}"
             , (err,body,res)->
                 console.log 'voice finish'
                 cb && cb err
@@ -139,7 +144,7 @@ ApiClient = class ApiClient
         opts =
             type: 'POST'
             headers:
-                'Referer': @cgi + 'singlemsgpage?' + 'fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN',
+                'Referer': @cgi + 'singlesendpage?' + 'tofakeid=' + fakeid + 't=message/send&action=index&token=#{@gtoken}&lang=zh_CN',
             data:
                 type:1
                 content:txt
@@ -150,7 +155,7 @@ ApiClient = class ApiClient
                 ajax:1
                 dataType: 'json'
         console.log opts
-        @_request @cgi+"singlesend?t=ajax-response&lang=zh_CN", opts, (err,body)->
+        @_request @cgi+"singlesend", opts, (err,body)->
             console.log err, body.toString()
 
 
