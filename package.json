@@ -1,6 +1,6 @@
 {
   "name": "wechat-hack-api",
-  "version": "0.4",
+  "version": "0.4.0",
   "description": "微信非官方api，通过登录公众平台编辑后台实现",
   "main": "index.js",
   "scripts": {
