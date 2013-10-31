@@ -1,6 +1,6 @@
 {
   "name": "wechat-hack-api",
-  "version": "0.3.1",
+  "version": "0.4",
   "description": "微信非官方api，通过登录公众平台编辑后台实现",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aleechou/wechat-hack-api.git#v0.3.1"
+    "url": "https://github.com/aleechou/wechat-hack-api.git#v0.4"
   },
   "keywords": [
     "wechat",
