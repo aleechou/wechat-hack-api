@@ -96,7 +96,7 @@
         var cgiData, rs;
 
         if (body) {
-          rs = /<script type=\"text\/javascript\">\s+cgiData=([\s\w\W]+?)seajs\.use\(\"user\/index\"\);/.exec(body.toString());
+          rs = /<script type=\"text\/javascript\">\s+wx\.cgiData=([\s\w\W]+?)seajs\.use\(\"user\/index\"\);/.exec(body.toString());
         }
         cgiData = void 0;
         if (rs) {
@@ -111,7 +111,7 @@
         var cgiData, rs;
 
         if (body) {
-          rs = /<script type=\"text\/javascript\">\s+wx.cgiData = ([\s\w\W]+?)seajs\.use\(\"message\/list\"\);/.exec(body.toString());
+          rs = /<script type=\"text\/javascript\">\s+wx\.cgiData = ([\s\w\W]+?)seajs\.use\(\"message\/list\"\);/.exec(body.toString());
         }
         cgiData = void 0;
         if (rs) {
@@ -122,15 +122,17 @@
     };
 
     ApiClient.prototype.usermessage = function(fakeid, cb) {
-      return this._request(this.cgi + ("singlemsgpage?msgid=&source=&count=20&t=wxm-singlechat&fromfakeid=" + fakeid + "&lang=zh_CN"), {}, function(err, body, res) {
+      return this._request(this.cgi + ("singlesendpage?action=index&t=message/sen&tofakeid=" + fakeid + "&lang=zh_CN"), {}, function(err, body, res) {
         var cgiData, rs;
 
-        rs = body.toString().match(/<script id=\"json-msgList\" type=\"json\">([\s\w\W]+?)<\/script>/);
+        if (body) {
+          rs = /<script type=\"text\/javascript\">\s+wx\.cgiData = ([\s\w\W]+?)wx\.cgiData\.tofakeid/.exec(body.toString());
+        }
         cgiData = void 0;
         if (rs) {
           eval('cgiData=' + rs[1]);
         }
-        return cb && cb(err, cgiData);
+        return cb && cb(err, cgiData.msg_items.msg_item);
       });
     };
 
@@ -145,10 +147,14 @@
           lang: "zh_CN",
           t: "ajax-getcontactinfo",
           fakeid: fakeid
+        },
+        headers: {
+          Referer: "" + this.cgi + "contactmanage?t=user/index&pagesize=10&pageidx=0&type=0&groupid=0&lang=zh_CN&token=" + this.gtoken
         }
       };
-      return this._request("" + cgi + "getcontactinfo", opts, function(err, body, res) {
-        return console.log(err, err ? void 0 : body);
+      return this._request("" + this.cgi + "getcontactinfo", opts, function(err, body, res) {
+        console.log(err, err ? void 0 : body);
+        return cb && cb(err, body);
       });
     };
 
@@ -165,13 +171,11 @@
     };
 
     ApiClient.prototype.voice = function(msgid, localpath, cb) {
-      console.log(msgid);
-      return this._request(this.cgi + ("getvoicedata?msgid=" + msgid + "&fileid=&lang=zh_CN"), {
+      return this._request(this.cgi + ("downloadfile?msgid=" + msgid + "&source=&token=" + this.token), {
         writeStream: fs.createWriteStream(localpath),
         headers: {
           'User-Agent': this.agent,
-          'Cookie': this._sendCookies(),
-          'Referer': "" + this.cgi + "getmessage?t=wxm-message&lang=zh_CN&count=50&token=" + this.token
+          'Cookie': this._sendCookies()
         }
       }, function(err, body, res) {
         console.log('voice finish');
@@ -185,7 +189,7 @@
       opts = {
         type: 'POST',
         headers: {
-          'Referer': this.cgi + 'singlemsgpage?' + 'fromfakeid=' + fakeid + '&msgid=&source=&count=20&t=wxm-singlechat&lang=zh_CN'
+          'Referer': this.cgi + 'singlesendpage?' + 'tofakeid=' + fakeid + 't=message/send&action=index&token=#{@gtoken}&lang=zh_CN'
         },
         data: {
           type: 1,
@@ -198,9 +202,8 @@
           dataType: 'json'
         }
       };
-      console.log(opts);
-      return this._request(this.cgi + "singlesend?t=ajax-response&lang=zh_CN", opts, function(err, body) {
-        return console.log(err, body.toString());
+      return this._request(this.cgi + "singlesend", opts, function(err, body) {
+        return console.log(err);
       });
     };
 
