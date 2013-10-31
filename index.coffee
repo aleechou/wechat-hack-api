@@ -129,13 +129,12 @@ ApiClient = class ApiClient
                 cb && cb err
 
     voice: (msgid,localpath,cb)->
-        console.log msgid
-        @_request @cgi+"getvoicedata?msgid=#{msgid}&fileid=&lang=zh_CN&token=#{@gtoken}",
+        @_request @cgi+"downloadfile?msgid=#{msgid}&source=&token=#{@token}",
             writeStream: fs.createWriteStream(localpath)
             headers:
                 'User-Agent': @agent
                 'Cookie': @_sendCookies()
-                'Referer': "#{@cgi}singlesendpage?t=wxm-message&lang=zh_CN&count=50&token=#{@gtoken}"
+
             , (err,body,res)->
                 console.log 'voice finish'
                 cb && cb err
@@ -154,9 +153,8 @@ ApiClient = class ApiClient
                 token:@token
                 ajax:1
                 dataType: 'json'
-        console.log opts
         @_request @cgi+"singlesend", opts, (err,body)->
-            console.log err, body.toString()
+            console.log err
 
 
     _receiveCookies: (res) ->
@@ -171,7 +169,6 @@ ApiClient = class ApiClient
         for n,v of @cookies
             cookies+= '; '
             cookies+= "#{n}=#{v}"
-        #console.log cookies
         cookies || undefined
 
     _request: (url,opts,cb) ->
@@ -187,6 +184,7 @@ ApiClient = class ApiClient
                 opts.data.token = @token
             else
                 _url+= "&token=" + @token
+
             _url
 
         urllib.request makesession(),opts,(err,body,res)=>
